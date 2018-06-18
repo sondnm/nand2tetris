@@ -1,13 +1,8 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-// File name: projects/02/ALU.hdl
-
 /**
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -27,8 +22,8 @@
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,11 +31,26 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    Not16(in=x, out=negx);
+    Not16(in=y, out=negy);
+
+    Mux4Way16(a=x, b=false, c=negx, d=true, sel[0]=zx, sel[1]=nx, out=finalx);
+    Mux4Way16(a=y, b=false, c=negy, d=true, sel[0]=zy, sel[1]=ny, out=finaly);
+
+    And16(a=finalx, b=finaly, out=anded);
+    Add16(a=finalx, b=finaly, out=added);
+    Mux16(a=anded, b=added, sel=f, out=res);
+    Not16(in=res, out=negres);
+
+    Mux16(a=res, b=negres, sel=no, out=out, out[0..7]=out7, out[8..15]=out15, out[15]=ng);
+    Or8Way(in=out7, out=any7);
+    Or8Way(in=out15, out=any15);
+    Or(a=any7, b=any15, out=any);
+    Not(in=any, out=zr);
 }
